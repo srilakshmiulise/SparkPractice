@@ -15,6 +15,7 @@ Also, Hive supports "READ Many WRITE Once" pattern. Which means that after inser
 
 NOTE: However the new version of Hive comes with updated features. Hive versions ( Hive 0.14) comes up with Update and Delete options as new features
 
+
 1)hive architecture general have 5 components
 
   these are UI,DRIVER,COMPILER,METASTORE,EE,HADOOP
@@ -31,6 +32,8 @@ it contain all the structure information of table partitions no of columns in th
 it provides single process storage we cant run two queries at a time hive CLI real time we use mysql any other strong databases which allow multiple symaltency instance.
 EE:- it will intaract with the NN RM to fetch desigred output,EE engine execute the plan which was created by compiler final giveback to tha result to UI
 https://www.youtube.com/watch?v=W1XnmXv8Wpo
+
+
 
 The driver is interacting with Compiler for getting the plan. (Here plan refers to query execution) process and its related metadata information gathering
 The compiler creates the plan for a job to be executed. Compiler communicating with Meta store for getting metadata request
@@ -51,13 +54,16 @@ Different modes of Hive
 Hive can operate in two modes depending on the size of data nodes in Hadoop.
 
 These modes are,
+
 Local mode
 Map reduce mode
 When to use Local mode:
+
 If the Hadoop installed under pseudo mode with having one data node we use Hive in this mode
 If the data size is smaller in term of limited to single local machine, we can use this mode
 Processing will be very fast on smaller data sets present in the local machine
 When to use Map reduce mode:
+
 If Hadoop is having multiple data nodes and data is distributed across different node we use Hive in this mode
 It will perform on large amount of data sets and query going to execute in parallel way
 Processing of large data sets with better performance can be achieved through this mode
@@ -71,8 +77,11 @@ Therefore from above example, we can conclude that partitioning is very useful. 
 b) Hive Bucketing Example
 Hence, from the above diagram, we can see that how each partition is bucketed into 2 buckets. Therefore each partition, says Technical, will have two files where each of them will be storing the Technical employee’s data
 
+
 Hive partition divides table into number of partitions and these partitions can be further subdivided into more manageable parts known as Buckets or Clusters. The Bucketing concept is based on Hash function, which depends on the type of the bucketing column. Records which are bucketed by the same column will always be saved in the same bucket.
+
 Here, CLUSTERED BY clause is used to divide the table into buckets.
+
 
 CREATE TABLE reasons_data3(
   shop_id bigint,
@@ -89,7 +98,10 @@ INSERT OVERWRITE TABLE reasons_data1 PARTITION(country_channel_id) select * from
 
 shop_id,item_id,item_desc,country_id,channel_id,reason_code,cause_description,channel_id
 
+
 INSERT OVERWRITE TABLE reasons_data2 PARTITION(country_channel_id) select shop_id,item_id,item_desc,country_id,channel_id,cause_description,country_channel_id from sales_data;
+
+
 
 HIVE PARTITION:
 
@@ -138,15 +150,22 @@ No rows affected (405.568 seconds)
 | NULL              | NULL            |
 +-------------------+-----------------+
 
+
 partition and bucketing:
 
 create table sample_sri1(id int,name string,dept string) row format delimited fields terminated by ',';
 
 load data local inpath '/home/hadoop/employee.txt' into table sample_sri1;
 
+
+
 CREATE TABLE mytable1(id int, name string) PARTITIONED BY(dept STRING) CLUSTERED BY(id) INTO 2 BUCKETS;
 
 insert into table mytable1  partition(id) select dept,name,id from sample_sri12;
+
+
+
+
 
 create table sample_sri2(id int,name string,dept string) row format delimited fields terminated by ',';
 No rows affected (0.44 seconds)load data local inpath '/home/hadoop/employee1.txt' overwrite into table sample_sri2;
@@ -171,6 +190,7 @@ No rows affected (0.378 seconds)
 WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
 No rows affected (38.779 seconds)
 
+
 op supergroup          0 2020-03-17 22:21 /user/hive/warehouse/retail_project.db/sample_sri2
 [hadoop@localhost ~]$ hadoop fs -ls /user/hive/warehouse/retail_project.db/mytable
 [hadoop@localhost ~]$ hadoop fs -ls /user/hive/warehouse/retail_project.db/mytable1
@@ -186,6 +206,8 @@ Found 2 items
 [hadoop@localhost ~]$ hadoop fs -cat /user/hive/warehouse/retail_project.db/mytable1/dept=hr/000000_0
 \N20
 \N10
+
+
 
 data:-
 
@@ -382,10 +404,8 @@ hive>
 OK
 Time taken: 0.373 seconds
 
-
 [cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/xyz/emp.xml
 cat: `/user/cloudera/xyz/emp.xml': No such file or directory
-
 
 JOINS:-
 hive> select a.id,a.sal,a.name,b.id,b.year from emp a join dept b on(a.id=b.id);
@@ -412,7 +432,6 @@ a.id	a.sal	a.name	b.id	b.year
 20	3000.0	lakshmi	20	2004
 30	5000.0	ravi	30	2005
 Time taken: 42.218 seconds, Fetched: 3 row(s)
-
 
 hive> select a.id,a.sal,a.name,b.id,b.year from emp a left join dept b on(a.id=b.id);
 Query ID = cloudera_20200329045454_c232b434-0cd9-4878-a78a-9f58ec758ecb
@@ -442,7 +461,6 @@ a.id	a.sal	a.name	b.id	b.year
 40	4000.0	kumar	NULL	NULL
 50	6000.0	rani	NULL	NULL
 Time taken: 33.469 seconds, Fetched: 5 row(s)
-
 
 how to remove header:-**************************
 hive> create table dept3(id int,year string) row format delimited fields terminated by ',' TBLPROPERTIES ('skip.header.line.count'='1');
@@ -559,25 +577,3 @@ HQL                                              SQL
 2)DFS
 3)maintainreplications so we can achive faulttolarent
 4)hive backend run MR
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
