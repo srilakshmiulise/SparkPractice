@@ -15,7 +15,6 @@ Also, Hive supports "READ Many WRITE Once" pattern. Which means that after inser
 
 NOTE: However the new version of Hive comes with updated features. Hive versions ( Hive 0.14) comes up with Update and Delete options as new features
 
-
 1)hive architecture general have 5 components
 
   these are UI,DRIVER,COMPILER,METASTORE,EE,HADOOP
@@ -32,8 +31,6 @@ it contain all the structure information of table partitions no of columns in th
 it provides single process storage we cant run two queries at a time hive CLI real time we use mysql any other strong databases which allow multiple symaltency instance.
 EE:- it will intaract with the NN RM to fetch desigred output,EE engine execute the plan which was created by compiler final giveback to tha result to UI
 https://www.youtube.com/watch?v=W1XnmXv8Wpo
-
-
 
 The driver is interacting with Compiler for getting the plan. (Here plan refers to query execution) process and its related metadata information gathering
 The compiler creates the plan for a job to be executed. Compiler communicating with Meta store for getting metadata request
@@ -54,16 +51,13 @@ Different modes of Hive
 Hive can operate in two modes depending on the size of data nodes in Hadoop.
 
 These modes are,
-
 Local mode
 Map reduce mode
 When to use Local mode:
-
 If the Hadoop installed under pseudo mode with having one data node we use Hive in this mode
 If the data size is smaller in term of limited to single local machine, we can use this mode
 Processing will be very fast on smaller data sets present in the local machine
 When to use Map reduce mode:
-
 If Hadoop is having multiple data nodes and data is distributed across different node we use Hive in this mode
 It will perform on large amount of data sets and query going to execute in parallel way
 Processing of large data sets with better performance can be achieved through this mode
@@ -77,11 +71,8 @@ Therefore from above example, we can conclude that partitioning is very useful. 
 b) Hive Bucketing Example
 Hence, from the above diagram, we can see that how each partition is bucketed into 2 buckets. Therefore each partition, says Technical, will have two files where each of them will be storing the Technical employee’s data
 
-
 Hive partition divides table into number of partitions and these partitions can be further subdivided into more manageable parts known as Buckets or Clusters. The Bucketing concept is based on Hash function, which depends on the type of the bucketing column. Records which are bucketed by the same column will always be saved in the same bucket.
-
 Here, CLUSTERED BY clause is used to divide the table into buckets.
-
 
 CREATE TABLE reasons_data3(
   shop_id bigint,
@@ -98,10 +89,7 @@ INSERT OVERWRITE TABLE reasons_data1 PARTITION(country_channel_id) select * from
 
 shop_id,item_id,item_desc,country_id,channel_id,reason_code,cause_description,channel_id
 
-
 INSERT OVERWRITE TABLE reasons_data2 PARTITION(country_channel_id) select shop_id,item_id,item_desc,country_id,channel_id,cause_description,country_channel_id from sales_data;
-
-
 
 HIVE PARTITION:
 
@@ -150,22 +138,15 @@ No rows affected (405.568 seconds)
 | NULL              | NULL            |
 +-------------------+-----------------+
 
-
 partition and bucketing:
 
 create table sample_sri1(id int,name string,dept string) row format delimited fields terminated by ',';
 
 load data local inpath '/home/hadoop/employee.txt' into table sample_sri1;
 
-
-
 CREATE TABLE mytable1(id int, name string) PARTITIONED BY(dept STRING) CLUSTERED BY(id) INTO 2 BUCKETS;
 
 insert into table mytable1  partition(id) select dept,name,id from sample_sri12;
-
-
-
-
 
 create table sample_sri2(id int,name string,dept string) row format delimited fields terminated by ',';
 No rows affected (0.44 seconds)load data local inpath '/home/hadoop/employee1.txt' overwrite into table sample_sri2;
@@ -190,7 +171,6 @@ No rows affected (0.378 seconds)
 WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
 No rows affected (38.779 seconds)
 
-
 op supergroup          0 2020-03-17 22:21 /user/hive/warehouse/retail_project.db/sample_sri2
 [hadoop@localhost ~]$ hadoop fs -ls /user/hive/warehouse/retail_project.db/mytable
 [hadoop@localhost ~]$ hadoop fs -ls /user/hive/warehouse/retail_project.db/mytable1
@@ -206,8 +186,6 @@ Found 2 items
 [hadoop@localhost ~]$ hadoop fs -cat /user/hive/warehouse/retail_project.db/mytable1/dept=hr/000000_0
 \N20
 \N10
-
-
 
 data:-
 
@@ -279,13 +257,9 @@ Researchd008
 Salesd007
 [hadoop@localhost ~]$ 
 
-
-
-
 Q)in hive if change external to internal path will change or not?
 
 if what to delete external to internal we can convert to external to intelnal path does not change so after converting to external to internal we drop table path does not bother if not change location also.
-
 
 CREATE EXTERNAL TABLE WITH LOCATION:-
 
@@ -313,7 +287,6 @@ OK
 50,6000,rani
 
 CHANGE EXTER TO INTERNAL TABLE:-
-
 
 hive> desc formatted emp4;
 OK
