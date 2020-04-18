@@ -1,0 +1,610 @@
+Hive is an ETL and Data warehousing tool developed on top of Hadoop Distributed File System (HDFS).
+In Hive, tables and databases are created first and then data is loaded into these tables.
+Hive as data warehouse designed for managing and querying only structured data that is stored in tables. 
+
+The major difference between HQL and SQL is that Hive query executes on Hadoop's infrastructure rather than the traditional database.
+The Hive query execution is going to be like series of automatically generated map reduce Jobs.
+Hive supports partition and buckets concepts for easy retrieval of data when the client executes the query.
+Hive supports custom specific UDF (User Defined Functions) for data cleansing, filtering, etc. According to the requirements of the programmers one can define Hive UDFs.
+
+Relational databases are of "Schema on READ and Schema on Write". First creating a table then inserting data into the particular table. On relational database tables, functions like Insertions, Updates, and Modifications can be performed.
+
+Hive is "Schema on READ only". So, functions like the update, modifications, etc. don't work with this. Because the Hive query in a typical cluster runs on multiple Data Nodes. So it is not possible to update and modify data across multiple nodes.( Hive versions below 0.13)
+
+Also, Hive supports "READ Many WRITE Once" pattern. Which means that after inserting table we can update the table in the latest Hive versions.
+
+NOTE: However the new version of Hive comes with updated features. Hive versions ( Hive 0.14) comes up with Update and Delete options as new features
+
+
+1)hive architecture general have 5 components
+
+  these are UI,DRIVER,COMPILER,METASTORE,EE,HADOOP
+UI:-
+2)throught UI( User Interface) user submit query to they system
+3)in hive shell if we type any query can see the results that UI we have 3 types of user interface 
+a)CLI
+b)web interface
+c)Thrift Server
+DRIVER:- main task of driver include first fetch required api that are jdbc and odbc.and also driver main task convert the hive query to mapreduce program little help of compiler
+COMPILER: compiler do symantic analysis of the program and also help convert the hive query to mapreduce and also prepare the execution plan with help of metastore.
+METASTORE:- 
+it contain all the structure information of table partitions no of columns in the table data types etc every information store in metastore by default hive uses derby database hive in real time project we dont use derby because
+it provides single process storage we cant run two queries at a time hive CLI real time we use mysql any other strong databases which allow multiple symaltency instance.
+EE:- it will intaract with the NN RM to fetch desigred output,EE engine execute the plan which was created by compiler final giveback to tha result to UI
+https://www.youtube.com/watch?v=W1XnmXv8Wpo
+
+
+
+The driver is interacting with Compiler for getting the plan. (Here plan refers to query execution) process and its related metadata information gathering
+The compiler creates the plan for a job to be executed. Compiler communicating with Meta store for getting metadata request
+Meta store sends metadata information back to compiler
+Compiler communicating with Driver with the proposed plan to execute the query
+Driver Sending execution plans to Execution engine
+Execution Engine (EE) acts as a bridge between Hive and Hadoop to process the query. For DFS operations.
+EE should first contacts Name Node and then to Data nodes to get the values stored in tables.
+EE is going to fetch desired records from Data Nodes. The actual data of tables resides in data node only. While from Name Node it only fetches the metadata information for the query.
+It collects actual data from data nodes related to mentioned query
+Execution Engine (EE) communicates bi-directionally with Meta store present in Hive to perform DDL (Data Definition Language) operations. Here DDL operations like CREATE, DROP and ALTERING tables and databases are done. Meta store will store information about database name, table names and column names only. It will fetch data related to query mentioned.
+Execution Engine (EE) in turn communicates with Hadoop daemons such as Name node, Data nodes, and job tracker to execute the query on top of Hadoop file system
+Fetching results from driver
+Sending results to Execution engine. Once the results fetched from data nodes to the EE, it will send results back to driver and to UI ( front end)
+Hive Continuously in contact with Hadoop file system and its daemons via Execution engine. The dotted arrow in the Job flow diagram shows the Execution engine communication with Hadoop daemons.
+
+Different modes of Hive
+Hive can operate in two modes depending on the size of data nodes in Hadoop.
+
+These modes are,
+
+Local mode
+Map reduce mode
+When to use Local mode:
+
+If the Hadoop installed under pseudo mode with having one data node we use Hive in this mode
+If the data size is smaller in term of limited to single local machine, we can use this mode
+Processing will be very fast on smaller data sets present in the local machine
+When to use Map reduce mode:
+
+If Hadoop is having multiple data nodes and data is distributed across different node we use Hive in this mode
+It will perform on large amount of data sets and query going to execute in parallel way
+Processing of large data sets with better performance can be achieved through this mode
+
+Hive Partitioning Example
+For example, we have a table employee_details containing the employee information of some company like employee_id, name, department, year, etc. Now, if we want to perform partitioning on the basis of department column. Then the information of all the employees belonging to a particular department will be stored together in that very partition. Physically, a partition in Hive is nothing but just a sub-directory in the table directory.
+For example, we have data for three departments in our employee_details table – Technical, Marketing and Sales. Thus we will have three partitions in total for each of the departments as we can see clearly in diagram below. For each department we will have all the data regarding that very department residing in a separate sub – directory under the table directory.
+
+So for example, all the employee data regarding Technical departments will be stored in user/hive/warehouse/employee_details/dept.=Technical. So, the queries regarding Technical employee would only have to look through the data present in the Technical partition.
+Therefore from above example, we can conclude that partitioning is very useful. It reduces the query latency by scanning only relevant partitioned data instead of the whole data set.
+b) Hive Bucketing Example
+Hence, from the above diagram, we can see that how each partition is bucketed into 2 buckets. Therefore each partition, says Technical, will have two files where each of them will be storing the Technical employee’s data
+
+
+Hive partition divides table into number of partitions and these partitions can be further subdivided into more manageable parts known as Buckets or Clusters. The Bucketing concept is based on Hash function, which depends on the type of the bucketing column. Records which are bucketed by the same column will always be saved in the same bucket.
+
+Here, CLUSTERED BY clause is used to divide the table into buckets.
+
+
+CREATE TABLE reasons_data3(
+  shop_id bigint,
+  item_id bigint,
+  item_desc string,
+  country_id string,
+  channel_id string,
+) PARTITIONED BY (
+  country_channel_id bigint
+)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ',';
+
+INSERT OVERWRITE TABLE reasons_data1 PARTITION(country_channel_id) select * from sales_data;
+
+shop_id,item_id,item_desc,country_id,channel_id,reason_code,cause_description,channel_id
+
+
+INSERT OVERWRITE TABLE reasons_data2 PARTITION(country_channel_id) select shop_id,item_id,item_desc,country_id,channel_id,cause_description,country_channel_id from sales_data;
+
+
+
+HIVE PARTITION:
+
+ jdbc:hive2://localhost:10000/default> create table sample_sri(id int,name string) row format delimited fields terminated by ',';
+No rows affected (0.438 seconds)
+0: jdbc:hive2://localhost:10000/default> load data local inpath '/home/hadoop/employee.txt' into table sample_sri;
+No rows affected (1.945 seconds)
+0: jdbc:hive2://localhost:10000/default> select * from sample_sri;
++----------------+------------------+
+| sample_sri.id  | sample_sri.name  |
++----------------+------------------+
+| NULL           | name             |
+| 10             | swarup           |
+| 20             | vasu             |
+| 30             | ravi             |
+| 40             | kumar            |
+| 50             | lakshmi          |
+| 60             | dvs              |
+| NULL           | NULL             |
++----------------+------------------+
+8 rows selected (0.592 seconds)
+
+0: jdbc:hive2://localhost:10000/default> create table sample_part(name string) partitioned by(id int)row format delimited fields terminated by ',';
+No rows affected (0.383 seconds)
+
+0: jdbc:hive2://localhost:10000/default> set hive.exec.dynamic.partition.mode=nonstrict
+. . . . . . . . . . . . . . . . . . . .> ;
+No rows affected (0.016 seconds)
+
+0: jdbc:hive2://localhost:10000/default> insert into table sample_part partition(id) select name,id from sample_sri;
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+No rows affected (405.568 seconds)
+0: jdbc:hive2://localhost:10000/default> 
+0: jdbc:hive2://localhost:10000/default> 
+0: jdbc:hive2://localhost:10000/default> select * from sample_part;
++-------------------+-----------------+
+| sample_part.name  | sample_part.id  |
++-------------------+-----------------+
+| swarup            | 10              |
+| vasu              | 20              |
+| ravi              | 30              |
+| kumar             | 40              |
+| lakshmi           | 50              |
+| dvs               | 60              |
+| name              | NULL            |
+| NULL              | NULL            |
++-------------------+-----------------+
+
+
+partition and bucketing:
+
+create table sample_sri1(id int,name string,dept string) row format delimited fields terminated by ',';
+
+load data local inpath '/home/hadoop/employee.txt' into table sample_sri1;
+
+
+
+CREATE TABLE mytable1(id int, name string) PARTITIONED BY(dept STRING) CLUSTERED BY(id) INTO 2 BUCKETS;
+
+insert into table mytable1  partition(id) select dept,name,id from sample_sri12;
+
+
+
+
+
+create table sample_sri2(id int,name string,dept string) row format delimited fields terminated by ',';
+No rows affected (0.44 seconds)load data local inpath '/home/hadoop/employee1.txt' overwrite into table sample_sri2;
+No rows affected (1.477 seconds)
+o rows affected (1.477 seconds)
+0: jdbc:hive2://localhost:10000/default> select * from sample_sri2;
++-----------------+-------------------+-------------------+
+| sample_sri2.id  | sample_sri2.name  | sample_sri2.dept  |
++-----------------+-------------------+-------------------+
+| 10              | sri               | hr                |
+| 20              | lakshmi           | hr                |
+| 30              | swarup            | mr                |
+| 40              | kumar             | tech              |
+| 50              | vijay             | mr                |
++-----------------+-------------------+-------------------+
+5 rows selected (0.487 seconds)
+
+0: jdbc:hive2://localhost:10000/default> CREATE TABLE mytable1(id int, name string) PARTITIONED BY(dept STRING) CLUSTERED BY(id) INTO 2 BUCKETS;
+No rows affected (0.378 seconds)
+
+0: jdbc:hive2://localhost:10000/default> insert into table mytable1  partition(dept) select name,id,dept from sample_sri2;
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+No rows affected (38.779 seconds)
+
+
+op supergroup          0 2020-03-17 22:21 /user/hive/warehouse/retail_project.db/sample_sri2
+[hadoop@localhost ~]$ hadoop fs -ls /user/hive/warehouse/retail_project.db/mytable
+[hadoop@localhost ~]$ hadoop fs -ls /user/hive/warehouse/retail_project.db/mytable1
+Found 3 items
+drwxrwxr-x   - hadoop supergroup          0 2020-03-17 22:25 /user/hive/warehouse/retail_project.db/mytable1/dept=hr
+drwxrwxr-x   - hadoop supergroup          0 2020-03-17 22:25 /user/hive/warehouse/retail_project.db/mytable1/dept=mr
+drwxrwxr-x   - hadoop supergroup          0 2020-03-17 22:25 /user/hive/warehouse/retail_project.db/mytable1/dept=tech
+[hadoop@localhost ~]$ hadoop fs -ls /user/hive/warehouse/retail_project.db/mytable1/dept=hr
+Found 2 items
+-rwxrwxr-x   1 hadoop supergroup         12 2020-03-17 22:25 /user/hive/warehouse/retail_project.db/mytable1/dept=hr/000000_0
+-rwxrwxr-x   1 hadoop supergroup          0 2020-03-17 22:25 /user/hive/warehouse/retail_project.db/mytable1/dept=hr/000001_0
+[hadoop@localhost ~]$ hadoop fs -ls /user/hive/warehouse/retail_project.db/mytable1/dept=hr^C
+[hadoop@localhost ~]$ hadoop fs -cat /user/hive/warehouse/retail_project.db/mytable1/dept=hr/000000_0
+\N20
+\N10
+
+
+
+data:-
+
+id,name,dept
+10,sri,hr
+20,lakshmi,hr
+30,swarup,mr
+40,kumar,tech
+50,vijay,mr
+
+BUCKETING:-
+
+0: jdbc:hive2://localhost:10000/default> set hive.enforce.bucketing = true;
+
+0: jdbc:hive2://localhost:10000/default> create table departments1_buck(dept_name string,dept_no string) clustered by(dept_no) into 3 buckets row format delimited fields terminated by ',';
+No rows affected (0.441 seconds)
+
+0: jdbc:hive2://localhost:10000/default> insert into table departments1_buck select * from departments1;
+WARNING: Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+No rows affected (40.943 seconds)
+0: jdbc:hive2://localhost:10000/default> desc departments1_buck;
++------------+------------+----------+
+|  col_name  | data_type  | comment  |
++------------+------------+----------+
+| dept_name  | string     |          |
+| dept_no    | string     |          |
++------------+------------+----------+
+2 rows selected (0.346 seconds)
+0: jdbc:hive2://localhost:10000/default> select * from departments1_buck limit 10;
++------------------------------+----------------------------+
+| departments1_buck.dept_name  | departments1_buck.dept_no  |
++------------------------------+----------------------------+
+| Research                     | d008                       |
+| Finance                      | d002                       |
+| Development                  | d005                       |
+| Quality Management           | d006                       |
+| Human Resources              | d003                       |
+| Customer Service             | d009                       |
+| Sales                        | d007                       |
+| Production                   | d004                       |
+| Marketing                    | d001                       |
++------------------------------+----------------------------+
+9 rows selected (0.558 seconds)
+
+[hadoop@localhost ~]$ hadoop fs -ls /user/hive/warehouse/employee.db
+Found 10 items
+drwxrwxr-x   - hadoop supergroup          0 2020-03-20 17:17 /user/hive/warehouse/employee.db/current_dept_emp1
+drwxrwxr-x   - hadoop supergroup          0 2020-03-20 18:41 /user/hive/warehouse/employee.db/current_dept_emp1_part
+drwxrwxr-x   - hadoop supergroup          0 2020-03-20 17:20 /user/hive/warehouse/employee.db/departments1
+drwxrwxr-x   - hadoop supergroup          0 2020-03-20 19:37 /user/hive/warehouse/employee.db/departments1_buck
+drwxrwxr-x   - hadoop supergroup          0 2020-03-20 17:25 /user/hive/warehouse/employee.db/dept_emp1
+drwxrwxr-x   - hadoop supergroup          0 2020-03-20 17:27 /user/hive/warehouse/employee.db/dept_emp_latest_date1
+drwxrwxr-x   - hadoop supergroup          0 2020-03-20 17:28 /user/hive/warehouse/employee.db/dept_manager1
+drwxrwxr-x   - hadoop supergroup          0 2020-03-20 17:30 /user/hive/warehouse/employee.db/employees1
+drwxrwxr-x   - hadoop supergroup          0 2020-03-20 17:32 /user/hive/warehouse/employee.db/salaries1
+drwxrwxr-x   - hadoop supergroup          0 2020-03-20 17:34 /user/hive/warehouse/employee.db/titles1
+[hadoop@localhost ~]$ hadoop fs -ls /user/hive/warehouse/employee.db/departments1
+Found 1 items
+-rwxrwxr-x   1 hadoop supergroup        153 2020-03-20 17:20 /user/hive/warehouse/employee.db/departments1/part-m-00000
+[hadoop@localhost ~]$ hadoop fs -cat /user/hive/warehouse/employee.db/departments1/part-m-00000
+Customer Serviced009
+Developmentd005
+Financed002
+Human Resourcesd003
+Marketingd001
+Productiond004
+Quality Managementd006
+Researchd008
+Salesd007
+[hadoop@localhost ~]$ 
+
+
+
+
+Q)in hive if change external to internal path will change or not?
+
+if what to delete external to internal we can convert to external to intelnal path does not change so after converting to external to internal we drop table path does not bother if not change location also.
+
+
+CREATE EXTERNAL TABLE WITH LOCATION:-
+
+hive> create external table if not exists emp4(id int,salary double,dept string) row format delimited fields terminated by ',' location "/user/cloudera/xyz";
+OK
+Time taken: 0.327 seconds
+hive> load data local inpath '/home/cloudera/emp.xml' overwrite into table emp4;
+Loading data to table default.emp4
+Table default.emp4 stats: [numFiles=1, totalSize=68]
+OK
+Time taken: 3.418 seconds
+hive> select * from emp4;
+OK
+10	1000.0	sri
+20	3000.0	lakshmi
+30	5000.0	ravi
+40	4000.0	kumar
+50	6000.0	rani
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/xyz/emp.xml
+10,1000,sri
+20,3000,lakshmi
+30,5000,ravi
+40,4000,kumar
+50,6000,rani
+
+CHANGE EXTER TO INTERNAL TABLE:-
+
+
+hive> desc formatted emp4;
+OK
+# col_name            	data_type           	comment             
+	 	 
+id                  	int                 	                    
+salary              	double              	                    
+dept                	string              	                    
+	 	 
+# Detailed Table Information	 	 
+Database:           	default             	 
+Owner:              	cloudera            	 
+CreateTime:         	Sat Mar 28 06:20:06 PDT 2020	 
+LastAccessTime:     	UNKNOWN             	 
+Protect Mode:       	None                	 
+Retention:          	0                   	 
+Location:           	hdfs://quickstart.cloudera:8020/user/cloudera/xyz	 
+Table Type:         	EXTERNAL_TABLE      	 
+Table Parameters:	 	 
+	COLUMN_STATS_ACCURATE	true                
+	EXTERNAL            	TRUE                
+	numFiles            	1                   
+	totalSize           	68                  
+	transient_lastDdlTime	1585401716          
+	 	 
+# Storage Information	 	 
+SerDe Library:      	org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe	 
+InputFormat:        	org.apache.hadoop.mapred.TextInputFormat	 
+OutputFormat:       	org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat	 
+Compressed:         	No                  	 
+Num Buckets:        	-1                  	 
+Bucket Columns:     	[]                  	 
+Sort Columns:       	[]                  	 
+Storage Desc Params:	 	 
+	field.delim         	,                   
+	serialization.format	,                   
+Time taken: 0.45 seconds, Fetched: 33 row(s)
+hive> alter table emp4 set tblproperties('EXTERNAL' = 'FALSE');
+OK
+Time taken: 0.296 seconds
+hive> desc formatted emp4;
+OK
+# col_name            	data_type           	comment             
+	 	 
+id                  	int                 	                    
+salary              	double              	                    
+dept                	string              	                    
+	 	 
+# Detailed Table Information	 	 
+Database:           	default             	 
+Owner:              	cloudera            	 
+CreateTime:         	Sat Mar 28 06:20:06 PDT 2020	 
+LastAccessTime:     	UNKNOWN             	 
+Protect Mode:       	None                	 
+Retention:          	0                   	 
+Location:           	hdfs://quickstart.cloudera:8020/user/cloudera/xyz	 
+Table Type:         	MANAGED_TABLE       	 
+Table Parameters:	 	 
+	COLUMN_STATS_ACCURATE	false               
+	EXTERNAL            	FALSE               
+	last_modified_by    	cloudera            
+	last_modified_time  	1585402061          
+	numFiles            	1                   
+	numRows             	-1                  
+	rawDataSize         	-1                  
+	totalSize           	68                  
+	transient_lastDdlTime	1585402061          
+	 	 
+# Storage Information	 	 
+SerDe Library:      	org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe	 
+InputFormat:        	org.apache.hadoop.mapred.TextInputFormat	 
+OutputFormat:       	org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat	 
+Compressed:         	No                  	 
+Num Buckets:        	-1                  	 
+Bucket Columns:     	[]                  	 
+Sort Columns:       	[]                  	 
+Storage Desc Params:	 	 
+	field.delim         	,                   
+	serialization.format	,                   
+Time taken: 0.268 seconds, Fetched: 37 row(s)
+
+ [cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/xyz/emp.xml
+10,1000,sri
+20,3000,lakshmi
+30,5000,ravi
+40,4000,kumar
+50,6000,rani
+NOTE:if we change external to internal table location not chage it will maitain same location
+
+DROP TABLE:-
+hive> 
+    > drop table emp4;
+OK
+Time taken: 0.373 seconds
+
+
+[cloudera@quickstart ~]$ hadoop fs -cat /user/cloudera/xyz/emp.xml
+cat: `/user/cloudera/xyz/emp.xml': No such file or directory
+
+
+JOINS:-
+hive> select a.id,a.sal,a.name,b.id,b.year from emp a join dept b on(a.id=b.id);
+Query ID = cloudera_20200329044545_f4c5dc7a-0be6-41ca-84f8-0e2a85c0adf7
+Total jobs = 1
+2020-03-29 04:46:00	Dump the side-table for tag: 1 with group count: 3 into file: file:/tmp/cloudera/16d6a04f-a454-456d-bc92-93984d3705b9/hive_2020-03-29_04-45-51_375_17031315623627954-1/-local-10003/HashTable-Stage-3/MapJoin-mapfile41--.hashtable
+Execution completed successfully
+MapredLocal task succeeded
+Launching Job 1 out of 1
+Number of reduce tasks is set to 0 since there's no reduce operator
+Starting Job = job_1585462781166_0005, Tracking URL = http://localhost:8088/proxy/application_1585462781166_0005/
+Kill Command = /usr/lib/hadoop/bin/hadoop job  -kill job_1585462781166_0005
+Hadoop job information for Stage-3: number of mappers: 1; number of reducers: 0
+2020-03-29 04:46:14,460 Stage-3 map = 0%,  reduce = 0%
+2020-03-29 04:46:31,376 Stage-3 map = 100%,  reduce = 0%, Cumulative CPU 17.46 sec
+MapReduce Total cumulative CPU time: 17 seconds 460 msec
+Ended Job = job_1585462781166_0005
+MapReduce Jobs Launched: 
+Stage-Stage-3: Map: 1   Cumulative CPU: 17.46 sec   HDFS Read: 6822 HDFS Write: 71 SUCCESS
+Total MapReduce CPU Time Spent: 17 seconds 460 msec
+OK
+a.id	a.sal	a.name	b.id	b.year
+10	1000.0	sri	10	2005
+20	3000.0	lakshmi	20	2004
+30	5000.0	ravi	30	2005
+Time taken: 42.218 seconds, Fetched: 3 row(s)
+
+
+hive> select a.id,a.sal,a.name,b.id,b.year from emp a left join dept b on(a.id=b.id);
+Query ID = cloudera_20200329045454_c232b434-0cd9-4878-a78a-9f58ec758ecb
+Total jobs = 1
+2020-03-29 04:54:13	Starting to launch local task to process map join;	maximum memory = 932184064
+2020-03-29 04:54:15	Uploaded 1 File to: file:/tmp/cloudera/16d6a04f-a454-456d-bc92-93984d3705b9/hive_2020-03-29_04-54-06_315_441848961944342287-1/-local-10003/HashTable-Stage-3/MapJoin-mapfile61--.hashtable (332 bytes)
+2020-03-29 04:54:15	End of local task; Time Taken: 1.911 sec.
+Execution completed successfully
+MapredLocal task succeeded
+Launching Job 1 out of 1
+Number of reduce tasks is set to 0 since there's no reduce operator
+Starting Job = job_1585462781166_0007, Tracking URL = http://localhost:8088/proxy/application_1585462781166_0007/
+Kill Command = /usr/lib/hadoop/bin/hadoop job  -kill job_1585462781166_0007
+Hadoop job information for Stage-3: number of mappers: 1; number of reducers: 0
+2020-03-29 04:54:28,802 Stage-3 map = 0%,  reduce = 0%
+2020-03-29 04:54:38,597 Stage-3 map = 100%,  reduce = 0%, Cumulative CPU 3.39 sec
+MapReduce Total cumulative CPU time: 3 seconds 390 msec
+Ended Job = job_1585462781166_0007
+MapReduce Jobs Launched: 
+Stage-Stage-3: Map: 1   Cumulative CPU: 3.39 sec   HDFS Read: 6644 HDFS Write: 114 SUCCESS
+Total MapReduce CPU Time Spent: 3 seconds 390 msec
+OK
+a.id	a.sal	a.name	b.id	b.year
+10	1000.0	sri	10	2005
+20	3000.0	lakshmi	20	2004
+30	5000.0	ravi	30	2005
+40	4000.0	kumar	NULL	NULL
+50	6000.0	rani	NULL	NULL
+Time taken: 33.469 seconds, Fetched: 5 row(s)
+
+
+how to remove header:-**************************
+hive> create table dept3(id int,year string) row format delimited fields terminated by ',' TBLPROPERTIES ('skip.header.line.count'='1');
+OK
+Time taken: 0.282 seconds
+hive> load data local inpath '/home/cloudera/dept.xml' overwrite into table dept3;
+Loading data to table learning.dept3
+Table learning.dept3 stats: [numFiles=1, totalSize=32]
+OK
+Time taken: 0.779 seconds
+hive> select * from dept3;
+OK
+dept3.id	dept3.year
+10	2005
+20	2004
+30	2005
+Time taken: 0.29 seconds, Fetched: 3 row(s)
+
+NULL VALUES:-***************************
+hive> create table dept4(id int,year string) row format delimited fields terminated by ',' TBLPROPERTIES ('serialization.null.format'='');
+OK
+Time taken: 0.205 seconds
+hive> load data local inpath '/home/cloudera/dept.xml' overwrite into table dept4;
+Loading data to table learning.dept4
+Table learning.dept4 stats: [numFiles=1, totalSize=20]
+OK
+Time taken: 0.925 seconds
+hive> select * from dept4;
+OK
+dept4.id	dept4.year
+10	NULL
+20	2004
+30	2005
+Time taken: 0.208 seconds, Fetched: 3 row(s)
+
+SAMPLE DATA;
+10,
+20,2004
+30,2005
+
+hive> create table dept5(id int,year string) row format delimited fields terminated by ',';
+OK
+Time taken: 0.517 seconds
+hive> load data local inpath '/home/cloudera/dept.xml' overwrite into table dept5;
+Loading data to table learning.dept5
+Table learning.dept5 stats: [numFiles=1, totalSize=20]
+OK
+Time taken: 0.872 seconds
+hive> select * from dept5;
+OK
+dept5.id	dept5.year
+10	
+20	2004
+30	2005
+Time taken: 0.647 seconds, Fetched: 3 row(s)
+
+HOW TO HANDLE NULL VALUES:-*********************************
+1)
+hive> select * from dept4;
+OK
+dept4.id	dept4.year
+10	NULL
+20	2004
+30	2005
+Time taken: 0.325 seconds, Fetched: 3 row(s)
+hive> select * from dept4 where year=null;
+OK
+dept4.id	dept4.year
+Time taken: 0.552 seconds
+hive> select * from dept4 where year is null;
+OK
+dept4.id	dept4.year
+10	NULL
+Time taken: 0.397 seconds, Fetched: 1 row(s)
+
+how to run .hql files in hive;
+
+hive –f /home/cloudera/sample.sql.
+
+Hive Command Line Options Usage Examples
+Execute query using hive command line options
+
+$ hive -e 'select * from test';
+Execute query using hive command line options in silent mode
+
+$ hive -S -e 'select * from test'
+
+HOW TO RENAME TABLE:-
+
+No rows selected (0.355 seconds)
+0: jdbc:hive2://localhost:10000/default> alter table emp123 rename to dept321;
+No rows affected (0.55 seconds)
+0: jdbc:hive2://localhost:10000/default> select * from dept321;
++----------------+-------------+
+| dept321.ename  | dept321.id  |
++----------------+-------------+
+| lakshmi        | 10          |
+| sri            | 20          |
+| dvs            | 30          |
+| tech           | 40          |
+| milind         | 50          |
+| null           | NULL        |
+| null           | 60          |
++----------------+-------------+
+
+ jdbc:hive2://localhost:10000/default> select * from emp123;
+Error: Error while compiling statement: FAILED: SemanticException [Error 10001]: Line 1:14 Table not found 'emp123' (state=42S02,code=10001)
+0: jdbc:hive2://localhost:10000/default> 
+
+DIFFERENT B/W HQL AND SQL?
+HQL                                              SQL
+
+1)its handle huge data
+2)DFS
+3)maintainreplications so we can achive faulttolarent
+4)hive backend run MR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
